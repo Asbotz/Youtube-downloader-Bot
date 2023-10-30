@@ -1,15 +1,16 @@
-# Initialize the Pyrogram client
-
 import os
 import re
+import time
 from pytube import YouTube
 from pyrogram import Client, filters
+from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Add your API ID, API Hash, and Bot Token here
 api_id = '21915156'
 api_hash = '4bc31ee81291b145ba12ab74cf21f4c3'
 bot_token = '6867385596:AAGgVjOFGTMWjVG5UzmwzXnMRUyhM-8vKGU'
+
 
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
@@ -98,10 +99,17 @@ async def callback_handler(client, callback_query):
         os.remove(video_path)
         video_file.close()
 
+    except FloodWait as e:
+        # Handle "FloodWait" by waiting for the specified time
+        await time.sleep(e.x)
+        # You can implement additional retry logic if needed
+
     except Exception as e:
         await callback_query.answer(text=f"Error: {str(e)}")
 
 # Start the bot
 if __name__ == "__main__":
     app.run()
+
+
 
