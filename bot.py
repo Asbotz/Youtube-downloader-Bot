@@ -1,55 +1,39 @@
+
+
+
+
+
+
+
 import os
-import re
 from pytube import YouTube
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
 # Add your API ID, API Hash, and Bot Token here
 api_id = '20191141'
 api_hash = '059da8863312a9bdf1fa04ec3467a528'
 bot_token = '6008466751:AAFjUsWB-wAvc04004E7f7STbNql5QphKEI'  # Replace with your bot token
-  # Replace with your bot token
-
+# Add your API ID, API Hash, and Bot Token here
+#api_id = 'YOUR_API_ID'
+#api_hash = 'YOUR_API_HASH'
+#bot_token = 'YOUR_BOT_TOKEN'
 
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
-# Start message with an inline keyboard
-start_message = (
-    "🎬 Welcome to the YouTube Video Downloader Bot!\n"
-    "Send me a YouTube video URL to get started."
-)
-
-keyboard = InlineKeyboardMarkup(
-    [
-        [InlineKeyboardButton("📖 How to Use", url="https://yourwebsite.com/how-to-use")],
-        [InlineKeyboardButton("💌 Feedback", url="https://yourwebsite.com/feedback")],
-        [InlineKeyboardButton("ℹ️ About Bot", callback_data="about")],
-    ]
-)
-
 # Start command handler
 @app.on_message(filters.command("start"))
 async def start_command(client, message):
-    await message.reply_text(start_message, reply_markup=keyboard)
-
-# About command handler
-@app.on_callback_query(filters.regex("about"))
-async def about_command(client, callback_query):
-    about_text = (
-        "🤖 This bot allows you to download and stream YouTube videos.\n"
-        "Created with ❤️ by Your Name.\n"
-        "For more information, visit our website: [Website Link](https://yourwebsite.com/about)"
+    start_message = (
+        "🎬 Welcome to the YouTube Video Downloader Bot!\n"
+        "Send me a YouTube video URL to get started."
     )
-    await callback_query.answer("Loading...")
-    await callback_query.message.edit_text(about_text, disable_web_page_preview=True)
+    await message.reply_text(start_message)
 
 # Handle incoming messages containing YouTube video URLs
 @app.on_message(filters.regex(r"https://www\.youtube\.com/watch\?v=.+"))
 async def handle_download(client, message):
-    chat_id = message.chat.id
     url = message.text
-
     yt = YouTube(url)
     download_directory = "downloads"
     os.makedirs(download_directory, exist_ok=True)
@@ -62,15 +46,8 @@ async def handle_download(client, message):
 
     format_buttons = []
 
-    for resolution in ["240p", "360p", "720p", "1080p"]:
-        format_found = False
-        for stream in available_formats:
-            if resolution in stream.resolution:
-                format_buttons.append([InlineKeyboardButton(resolution, callback_data=f"format_{available_formats.index(stream)}|{url}|{download_directory}")])
-                format_found = True
-                break
-        if not format_found:
-            format_buttons.append([InlineKeyboardButton(f"No {resolution}", callback_data=f"no_format|{url}|{download_directory}")])
+    for stream in available_formats:
+        format_buttons.append([InlineKeyboardButton(f"{stream.resolution} - {stream.mime_type}", callback_data=f"format_{available_formats.index(stream)}|{url}|{download_directory}")])
 
     reply_markup = InlineKeyboardMarkup(format_buttons)
 
@@ -78,15 +55,10 @@ async def handle_download(client, message):
     await message.reply("Choose a format to download or stream:", reply_markup=reply_markup)
 
 # Handle callback queries for format selection
-@app.on_callback_query(filters.regex(r"^(format_\d+|no_format)\|.+\|.+"))
+@app.on_callback_query(filters.regex(r"^(format_\d+)\|.+\|.+"))
 async def callback_handler(client, callback_query):
-    chat_id = callback_query.message.chat.id
     callback_data = callback_query.data.split('|')
     format_choice, url, download_directory = callback_data
-
-    if format_choice == "no_format":
-        await client.send_message(chat_id, "No video format available for streaming.")
-        return
 
     format_choice = int(format_choice.replace("format_", ""))
     yt = YouTube(url)
@@ -98,7 +70,7 @@ async def callback_handler(client, callback_query):
         selected_stream.download(output_path=download_directory, filename=video_title)
 
         # Send the video as a document
-        await client.send_document(chat_id, document=video_path, file_name=f"{video_title}.mp4")
+        await client.send_document(callback_query.from_user.id, document=video_path, caption=video_title)
         os.remove(video_path)
 
     except Exception as e:
@@ -107,4 +79,3 @@ async def callback_handler(client, callback_query):
 # Start the bot
 if __name__ == "__main__":
     app.run()
-
