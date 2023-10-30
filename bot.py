@@ -5,9 +5,9 @@ import re
 import os
 
 # Add your API ID, API Hash, and Bot Token here
-api_id = 'YOUR_API_ID'
-api_hash = 'YOUR_API_HASH'
-bot_token = 'YOUR_BOT_TOKEN'
+api_id = '21915156'
+api_hash = '4bc31ee81291b145ba12ab74cf21f4c3'
+bot_token = '6867385596:AAGgVjOFGTMWjVG5UzmwzXnMRUyhM-8vKGU'
 
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
