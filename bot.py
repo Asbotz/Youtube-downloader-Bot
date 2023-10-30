@@ -3,10 +3,12 @@ import yt_dlp
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from datetime import timedelta
-
-api_id = 'YOUR_API_ID'
-api_hash = 'YOUR_API_HASH'
-bot_token = 'YOUR_BOT_TOKEN'
+api_id = '20191141'
+api_hash = '059da8863312a9bdf1fa04ec3467a528'
+bot_token = '6008466751:AAFjUsWB-wAvc04004E7f7STbNql5QphKEI'
+#api_id = 'YOUR_API_ID'
+#api_hash = 'YOUR_API_HASH'
+#bot_token = 'YOUR_BOT_TOKEN'
 
 # Initialize the Pyrogram client
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
