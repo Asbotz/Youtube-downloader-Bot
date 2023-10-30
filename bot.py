@@ -1,13 +1,12 @@
+import os
+import re
+from pytube import YouTube
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pytube import YouTube
-import re
-import os
-
-# Add your API ID, API Hash, and Bot Token here
 api_id = '21915156'
 api_hash = '4bc31ee81291b145ba12ab74cf21f4c3'
 bot_token = '6867385596:AAGgVjOFGTMWjVG5UzmwzXnMRUyhM-8vKGU'
+
 
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
@@ -32,7 +31,7 @@ async def start_command(client, message):
     await message.reply_text(start_message, reply_markup=keyboard)
 
 # About command handler
-@app.on_callback_query(filters.regex("about"))
+@app.on_callback_query(filters.regex("^about$"))
 async def about_command(client, callback_query):
     about_text = (
         "🤖 This bot allows you to download and stream YouTube videos.\n"
@@ -51,26 +50,16 @@ async def handle_download(client, message):
     download_directory = "downloads"
     os.makedirs(download_directory, exist_ok=True)
 
-    format_buttons = []
-    available_formats = []
-
-    for stream in yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc():
-        if stream.includes_video_track:
-            available_formats.append(stream)
+    available_formats = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc()
 
     if not available_formats:
-        await client.send_message(chat_id, "No video formats available for this URL.")
+        await message.reply("No video formats available for this URL.")
         return
 
-    for resolution in ["240p", "360p", "720p", "1080p"]:
-        format_found = False
-        for stream in available_formats:
-            if resolution in stream.resolution:
-                format_buttons.append([InlineKeyboardButton(resolution, callback_data=f"format_{available_formats.index(stream)}|{url}|{download_directory}")])
-                format_found = True
-                break
-        if not format_found:
-            format_buttons.append([InlineKeyboardButton(f"No {resolution}", callback_data=f"no_format|{url}|{download_directory}")])
+    format_buttons = []
+
+    for stream in available_formats:
+        format_buttons.append([InlineKeyboardButton(stream.resolution, callback_data=f"format_{available_formats.index(stream)}|{url}|{download_directory}")])
 
     reply_markup = InlineKeyboardMarkup(format_buttons)
 
@@ -78,15 +67,11 @@ async def handle_download(client, message):
     await message.reply("Choose a format to download or stream:", reply_markup=reply_markup)
 
 # Handle callback queries for format selection
-@app.on_callback_query(filters.regex(r"^(format_\d+|no_format)\|.+\|.+"))
+@app.on_callback_query(filters.regex(r"^format_\d+\|.+\|.+"))
 async def callback_handler(client, callback_query):
     chat_id = callback_query.message.chat.id
     callback_data = callback_query.data.split('|')
     format_choice, url, download_directory = callback_data
-
-    if format_choice == "no_format":
-        await client.send_message(chat_id, "No video format available for streaming.")
-        return
 
     format_choice = int(format_choice.replace("format_", ""))
     yt = YouTube(url)
