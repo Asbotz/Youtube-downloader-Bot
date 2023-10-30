@@ -10,6 +10,7 @@ api_hash = '059da8863312a9bdf1fa04ec3467a528'
 bot_token = '6008466751:AAFjUsWB-wAvc04004E7f7STbNql5QphKEI'  # Replace with your bot token
   # Replace with your bot token
 
+
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
@@ -41,7 +42,7 @@ async def about_command(client, callback_query):
         "For more information, visit our website: [Website Link](https://yourwebsite.com/about)"
     )
     await callback_query.answer("Loading...")
-    await callback_query.message.edit_text(about_text)
+    await callback_query.message.edit_text(about_text, disable_web_page_preview=True)
 
 # Handle incoming messages containing YouTube video URLs
 @app.on_message(filters.regex(r"https://www\.youtube\.com/watch\?v=.+"))
@@ -97,7 +98,7 @@ async def callback_handler(client, callback_query):
         selected_stream.download(output_path=download_directory, filename=video_title)
 
         # Send the video as a document
-        await client.send_document(chat_id, document=video_path, caption=video_title)
+        await client.send_document(chat_id, document=video_path, file_name=f"{video_title}.mp4")
         os.remove(video_path)
 
     except Exception as e:
@@ -106,3 +107,4 @@ async def callback_handler(client, callback_query):
 # Start the bot
 if __name__ == "__main__":
     app.run()
+
