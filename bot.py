@@ -1,12 +1,16 @@
+# Initialize the Pyrogram client
+
+
 import os
 import re
 from pytube import YouTube
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+# Add your API ID, API Hash, and Bot Token here
 api_id = '21915156'
 api_hash = '4bc31ee81291b145ba12ab74cf21f4c3'
 bot_token = '6867385596:AAGgVjOFGTMWjVG5UzmwzXnMRUyhM-8vKGU'
-
 
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
@@ -38,7 +42,7 @@ async def about_command(client, callback_query):
         "Created with ❤️ by Your Name.\n"
         "For more information, visit our website: [Website Link](https://yourwebsite.com/about)"
     )
-    await callback_query.message.edit_text(about_text, parse_mode="markdown")
+    await callback_query.message.edit_text(about_text)
 
 # Handle incoming messages containing YouTube video URLs
 @app.on_message(filters.regex(r"https://www\.youtube\.com/watch\?v=.+"))
@@ -94,3 +98,4 @@ async def callback_handler(client, callback_query):
 # Start the bot
 if __name__ == "__main__":
     app.run()
+
