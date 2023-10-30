@@ -8,6 +8,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 api_id = '20191141'
 api_hash = '059da8863312a9bdf1fa04ec3467a528'
 bot_token = '6008466751:AAFjUsWB-wAvc04004E7f7STbNql5QphKEI'  # Replace with your bot token
+  # Replace with your bot token
 
 # Initialize the Pyrogram client
 app = Client("youtube_downloader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
@@ -32,14 +33,15 @@ async def start_command(client, message):
     await message.reply_text(start_message, reply_markup=keyboard)
 
 # About command handler
-@app.on_callback_query(filters.regex("^about$"))
+@app.on_callback_query(filters.regex("about"))
 async def about_command(client, callback_query):
     about_text = (
         "🤖 This bot allows you to download and stream YouTube videos.\n"
         "Created with ❤️ by Your Name.\n"
         "For more information, visit our website: [Website Link](https://yourwebsite.com/about)"
     )
-    await callback_query.message.edit_text(about_text, parse_mode="markdown")
+    await callback_query.answer("Loading...")
+    await callback_query.message.edit_text(about_text)
 
 # Handle incoming messages containing YouTube video URLs
 @app.on_message(filters.regex(r"https://www\.youtube\.com/watch\?v=.+"))
@@ -51,16 +53,13 @@ async def handle_download(client, message):
     download_directory = "downloads"
     os.makedirs(download_directory, exist_ok=True)
 
-    format_buttons = []
-    available_formats = []
-
-    for stream in yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc():
-        if stream.includes_video_track:
-            available_formats.append(stream)
+    available_formats = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc()
 
     if not available_formats:
         await message.reply("No video formats available for this URL.")
         return
+
+    format_buttons = []
 
     for resolution in ["240p", "360p", "720p", "1080p"]:
         format_found = False
