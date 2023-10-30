@@ -1,3 +1,4 @@
+import pyrogram
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from pytube import YouTube
