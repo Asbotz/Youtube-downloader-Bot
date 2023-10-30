@@ -1,6 +1,5 @@
 # Initialize the Pyrogram client
 
-
 import os
 import re
 from pytube import YouTube
@@ -44,13 +43,20 @@ async def about_command(client, callback_query):
     )
     await callback_query.message.edit_text(about_text)
 
+# Extract the video ID from the short-form link
+def get_video_id(url):
+    return url.split("/")[-1].split("?")[0]
+
 # Handle incoming messages containing YouTube video URLs
-@app.on_message(filters.regex(r"https://www\.youtube\.com/watch\?v=.+"))
+@app.on_message(filters.regex(r"https://youtu\.be/.+"))
 async def handle_download(client, message):
     chat_id = message.chat.id
     url = message.text
 
-    yt = YouTube(url)
+    video_id = get_video_id(url)
+    full_url = f"https://www.youtube.com/watch?v={video_id}"
+
+    yt = YouTube(full_url)
     download_directory = "downloads"
     os.makedirs(download_directory, exist_ok=True)
 
@@ -63,7 +69,7 @@ async def handle_download(client, message):
     format_buttons = []
 
     for stream in available_formats:
-        format_buttons.append([InlineKeyboardButton(stream.resolution, callback_data=f"format_{available_formats.index(stream)}|{url}|{download_directory}")])
+        format_buttons.append([InlineKeyboardButton(stream.resolution, callback_data=f"format_{available_formats.index(stream)}|{full_url}|{download_directory}")])
 
     reply_markup = InlineKeyboardMarkup(format_buttons)
 
