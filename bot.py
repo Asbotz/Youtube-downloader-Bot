@@ -4,16 +4,10 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from datetime import timedelta
 
-
 # Add your API ID, API Hash, and Bot Token here
-api_id = '20191141'
-api_hash = '059da8863312a9bdf1fa04ec3467a528'
-bot_token = '6008466751:AAFjUsWB-wAvc04004E7f7STbNql5QphKEI'  
-
-# Add your API ID, API Hash, and Bot Token here
-#api_id = 'YOUR_API_ID'
-#api_hash = 'YOUR_API_HASH'
-#bot_token = 'YOUR_BOT_TOKEN'
+api_id = 'YOUR_API_ID'
+api_hash = 'YOUR_API_HASH'
+bot_token = 'YOUR_BOT_TOKEN'
 
 # Initialize the Pyrogram client
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
@@ -86,31 +80,34 @@ async def start_command(client, message):
 
     await message.reply_text(start_message, reply_markup=start_keyboard)
 
-# Close command handler
-@app.on_message(filters.command("close"))
-async def close_command(client, message):
-    await message.reply_text("Menu closed.")
-
 # Help command handler
-@app.on_message(filters.command("help"))
-async def help_command(client, message):
+@app.on_callback_query(filters.regex("help"))
+async def help_callback(client, callback_query):
+    user_id = callback_query.from_user.id
     help_text = (
         "ℹ️ Help\n\n"
         "This bot allows you to upload content from URLs.\n\n"
         "To get started, send a valid URL. You can use the /settings command to change upload mode (video or file).\n\n"
         "You can also access the settings menu via the 'Settings' button."
     )
-    await message.reply_text(help_text)
+    await app.send_message(user_id, help_text)
 
 # About command handler
-@app.on_message(filters.command("about"))
-async def about_command(client, message):
+@app.on_callback_query(filters.regex("about"))
+async def about_callback(client, callback_query):
+    user_id = callback_query.from_user.id
     about_text = (
         "🤖 About\n\n"
         "URL Uploader Bot allows you to upload content from URLs, supporting both video and file upload modes.\n\n"
         "Created with ❤️ by Your Name."
     )
-    await message.reply_text(about_text)
+    await app.send_message(user_id, about_text)
+
+# Close command handler
+@app.on_callback_query(filters.regex("close"))
+async def close_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    await app.send_message(user_id, "Menu closed.")
 
 # Handle incoming messages containing valid URLs
 @app.on_message(filters.regex(r"https?://.+") | filters.regex(r"www\..+\..+"))
@@ -126,7 +123,7 @@ async def handle_upload(client, message):
 
     try:
         info_dict = ydl.extract_info(url, download=False)
-
+        
         if 'entries' in info_dict:
             video = info_dict['entries'][0]
         else:
@@ -135,23 +132,22 @@ async def handle_upload(client, message):
         download_url = video.get('url', url)
         file_name = video.get('title', url)
         duration = video.get('duration', 0)
-
+        
         if upload_mode == "video":
+            # Send the video
             download_message = await message.reply_video(
                 video=download_url,
                 caption=f"{file_name}\nDuration: {format_duration(duration)}",
                 thumb=thumbnail
             )
         elif upload_mode == "file":
+            # Send as a document
             download_message = await message.reply_document(
                 document=download_url,
                 caption=f"{file_name}\nDuration: {format_duration(duration)}",
                 thumb=thumbnail
             )
-
-        user_thumbnails[user_id] = thumbnail
-        download_progress[user_id] = download_message.message_id
-
+        
         # Generate format buttons and add them to the format_options dictionary
         available_formats = video.get('formats', [])
         format_buttons = []
@@ -159,18 +155,18 @@ async def handle_upload(client, message):
         for i, fmt in enumerate(available_formats):
             format_label = f"{fmt.get('format_note', 'Format')} - {fmt.get('ext', 'ext')}"
             format_buttons.append(InlineKeyboardButton(format_label, callback_data=f"format_{i}|{url}|{download_directory}"))
-            format_options[user_id] = format_buttons
-
+        
         if format_buttons:
             format_buttons.append(InlineKeyboardButton("Cancel", callback_data=f"cancel_format|{user_id}"))
             format_options[user_id] = format_buttons
-
+        
             format_markup = InlineKeyboardMarkup(format_buttons)
             await message.reply("Choose a format to download or stream:", reply_markup=format_markup)
-
+        
     except yt_dlp.DownloadError:
         await message.reply("Invalid URL or no content found. Please provide a valid URL.")
 
+# Show thumbnail command handler
 # Show thumbnail command handler
 @app.on_message(filters.command("showthumbnail"))
 async def show_thumbnail_command(client, message):
@@ -265,6 +261,8 @@ async def callback_handler(client, callback_query):
 
     if "cancel" in callback_query.data:
         await app.send_message(user_id, "Settings menu canceled.")
+
+# ... nk ...
 
 # Run the bot
 if __name__ == "__main__":
