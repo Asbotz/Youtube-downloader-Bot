@@ -1,14 +1,9 @@
-
-
-
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from ytdl_nis import YoutubeDL
+from yt_dlp import YoutubeDL
 from tqdm import tqdm
 import os
 import re
-import humanize
 
 # Your API credentials
 api_id = '20191141'
@@ -19,13 +14,6 @@ bot_token = '6759465412:AAFAxePYnXgIOT2ZdD4T71KyLxXigr7iWXc'
 
 # Create a Pyrogram Client instance
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
-
-ydl_opts = {
-    'quiet': True,
-    'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}")]
-}
-
-ydl = YoutubeDL(ydl_opts)
 
 url_pattern = r"https?://(www\.)?(sonyliv\.com|youtube\.com|youtu\.be|hotstar\.com)/.+"  # Support SonyLIV, YouTube, Hotstar, and other sites
 
@@ -39,6 +27,9 @@ async def handle_upload(client, message):
         if not is_valid_url(url):
             await message.reply("Invalid URL. Please provide a valid URL.")
             return
+
+        ydl_opts = {}
+        ydl = YoutubeDL(ydl_opts)
 
         with ydl:
             info_dict = ydl.extract_info(url, download=False)
@@ -72,6 +63,9 @@ async def handle_upload(client, message):
 async def callback_handler(client, query):
     try:
         format_id = query.data.split("_")[1]
+
+        ydl_opts = {}
+        ydl = YoutubeDL(ydl_opts)
 
         info_dict = ydl.extract_info(query.message.text, download=True)
         if not info_dict:
@@ -114,3 +108,9 @@ async def callback_handler(client, query):
 
 if __name__ == "__main__":
     app.run()
+
+
+
+
+
+
