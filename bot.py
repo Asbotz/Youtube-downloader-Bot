@@ -1,7 +1,12 @@
-import os
+
+
+
+
+
 import yt_dlp
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import re  # Import the re module for URL validation
 
 # Define your download and upload directories
 download_dir = "downloads"  # Directory for storing downloaded videos
@@ -13,6 +18,8 @@ bot_token = '5828088037:AAGu9hwWDURyPjcsj5uvOacm9I5RLKdKHEI'  # Replace with you
 
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
+selected_format = None  # To keep track of the selected format
+
 ydl_opts = {
     'format': 'best',
     'quiet': True,
@@ -20,6 +27,13 @@ ydl_opts = {
 }
 
 ydl = yt_dlp.YoutubeDL(ydl_opts)
+
+# Define a regular expression pattern for a valid URL
+url_pattern = r"^(https?|ftp)://[^\s/$.?#].[^\s]*$"
+
+def is_valid_url(url):
+    # Use the re module to match the URL against the pattern
+    return re.match(url_pattern, url) is not None
 
 @app.on_message(filters.command("start"))
 async def start_command(client, message):
@@ -32,31 +46,32 @@ async def start_command(client, message):
 
 @app.on_message(filters.regex(r"https?://.+") | filters.regex(r"www\..+\..+"))
 async def handle_upload(client, message):
+    global selected_format  # Declare global variable
+
     url = message.text
+    if not is_valid_url(url):
+        await message.reply("Invalid URL. Please provide a valid URL.")
+        return
+
     try:
         info_dict = ydl.extract_info(url, download=True)
         formats = info_dict.get('formats', [])
 
-        # Filter formats for 240p, 360p, 720p, and 1080p
         valid_formats = [format for format in formats if format.get('filesize') is not None and format['height'] in (240, 360, 720, 1080)]
 
         if not valid_formats:
             await message.reply("No available formats with the specified resolutions found for this video.")
             return
 
-        # Sort valid formats by resolution in ascending order
-        valid_formats.sort(key=lambda fmt: fmt['height'])
-
-        # Create format buttons for each valid format
         format_buttons = []
         for format in valid_formats:
             format_id = format['format_id']
             button_text = f"{format['height']}p ({format['filesize']}B)"
-            button_data = f"format_{format_id}"
-            format_buttons.append(InlineKeyboardButton(text=button_text, callback_data=button_data))
+            button_data = f"format_{format_id}"  # Use the format_id as the button_data
+            format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
 
-        # Create an InlineKeyboardMarkup with the format buttons
-        reply_markup = InlineKeyboardMarkup([format_buttons])
+        # Create an InlineKeyboardMarkup with the format buttons displayed vertically
+        reply_markup = InlineKeyboardMarkup(format_buttons)
 
         await message.reply_text("Please select a resolution:", reply_markup=reply_markup)
 
@@ -65,8 +80,11 @@ async def handle_upload(client, message):
 
 @app.on_callback_query()
 async def callback_handler(client, query):
-    if query.data.startswith("format_"):
-        format_id = query.data.split("_")[1]
+    global selected_format  # Declare global variable
+
+    format_id = query.data.split("_")[1]
+
+    if format_id == selected_format:  # Check if the format matches the selected format
         chat_id = query.message.chat.id
         url = query.message.text
         info_dict = ydl.extract_info(url, download=True)
@@ -74,16 +92,13 @@ async def callback_handler(client, query):
 
         with open(video_file_path, "rb") as file:
             # Send the video to Telegram
-            video_message = await app.send_video(chat_id=chat_id, video=file, caption="Video upload in progress...")
+            video_message = await client.send_video(chat_id=chat_id, video=file, caption="Video upload in progress...")
 
         if video_message:
-            await app.send_message(chat_id=chat_id, text="Video uploaded successfully!")
+            await client.send_message(chat_id=chat_id, text="Video uploaded successfully!")
 
 if __name__ == "__main__":
     app.run()
-
-
-
 
 
 
