@@ -4,7 +4,7 @@ from pyrogram import Client, filters
 
 api_id = '20191141'
 api_hash = '059da8863312a9bdf1fa04ec3467a528'
-bot_token = 'YOUR_BOT_TOKEN'  # Replace with your bot token
+bot_token = '6008466751:AAGALmg_0BnZx4pZm1b7sDxeUPc7Sms0M-E'  # Replace with your bot token
 
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
