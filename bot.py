@@ -41,29 +41,28 @@ async def handle_upload(client, message):
         info_dict = ydl.extract_info(url, download=True, outtmpl=os.path.join(download_dir, '%(title)s.%(ext)s'))
         formats = info_dict.get('formats', [])
 
-        if not formats:
-            await message.reply("No available formats found for this video.")
+        # Filter formats for 240p, 360p, 720p, and 1080p
+        valid_formats = [format for format in formats if format.get('filesize') is not None and format['height'] in (240, 360, 720, 1080)]
+
+        if not valid_formats:
+            await message.reply("No available formats with the specified resolutions found for this video.")
             return
 
-        # Create a list of format buttons
+        # Sort valid formats by resolution in ascending order
+        valid_formats.sort(key=lambda fmt: fmt['height'])
+
+        # Create format buttons for each valid format
         format_buttons = []
-        for format in formats:
-            file_size = format.get('filesize', None)
+        for format in valid_formats:
             format_id = format['format_id']
-
-            # Customize the text for each button as per your requirements
-            button_text = f"Format {format_id}{' (' + str(file_size) + 'B)' if file_size is not None else ''}"
-
-            # Define the callback data for each button
+            button_text = f"{format['height']}p ({format['filesize']}B)"
             button_data = f"format_{format_id}"
-
-            # Append the button to the list
             format_buttons.append(InlineKeyboardButton(text=button_text, callback_data=button_data))
 
         # Create an InlineKeyboardMarkup with the format buttons
         reply_markup = InlineKeyboardMarkup([format_buttons])
 
-        await message.reply_text("Please select a format:", reply_markup=reply_markup)
+        await message.reply_text("Please select a resolution:", reply_markup=reply_markup)
 
     except yt_dlp.DownloadError:
         await message.reply("Invalid URL or no content found. Please provide a valid URL.")
