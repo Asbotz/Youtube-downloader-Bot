@@ -67,10 +67,10 @@ async def handle_upload(client, message):
         for format in formats:
             format_id = format['format_id']
             filesize_in_bytes = format.get('filesize', 0)
-
             filesize_humanized = naturalsize(filesize_in_bytes, binary=True)  # Format the file size
             format_type = format['ext']  # Get the format type (MP4, WebM, etc.)
-            button_text = f"{format['height']}p ({filesize_humanized}) - {format_type}"
+            height = format.get('height', 'Unknown')  # Get the height or set to 'Unknown' if not available
+            button_text = f"{height}p ({filesize_humanized}) - {format_type}"
             button_data = f"format_{format_id}"
             format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
 
