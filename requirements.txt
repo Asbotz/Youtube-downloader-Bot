@@ -6,3 +6,4 @@ lxml
 tqdm
 TgCrypto
 humanize
+ytdl-nis
