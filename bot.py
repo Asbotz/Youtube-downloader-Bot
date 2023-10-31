@@ -2,7 +2,7 @@ import re
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import yt_dlp
-from humanize import naturalsize
+#from humanize import naturalsize
 from tqdm import tqdm
 import os
 
@@ -56,13 +56,21 @@ async def handle_upload(client, message):
 
         format_buttons = []
 
+        #for format in formats:
+            #format_id = format['format_id']
+            #filesize_in_bytes = format.get('filesize', 0)
+            #filesize_humanized = naturalsize(filesize_in_bytes, binary=True)
+            #format_type = format['ext']
+            #height = format.get('height', 'Unknown')
+            #button_text = f"{height}p ({filesize_humanized}) - {format_type}"
+            #button_data = f"format_{format_id}"
+            #format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
         for format in formats:
             format_id = format['format_id']
-            filesize_in_bytes = format.get('filesize', 0)
-            filesize_humanized = naturalsize(filesize_in_bytes, binary=True)
+            file_size = format.get('filesize', 'Unknown')
             format_type = format['ext']
             height = format.get('height', 'Unknown')
-            button_text = f"{height}p ({filesize_humanized}) - {format_type}"
+            button_text = f"{height}p ({file_size}) - {format_type}"
             button_data = f"format_{format_id}"
             format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
 
