@@ -1,3 +1,6 @@
+
+
+
 import os
 import yt_dlp
 from pyrogram import Client, filters
@@ -16,7 +19,8 @@ app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot
 ydl_opts = {
     'format': 'best',
     'quiet': True,
-    'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}")]
+    'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}"),
+    'outtmpl': os.path.join(download_dir, '%(title)s.%(ext)s')]  # Output template for downloaded videos
 }
 
 ydl = yt_dlp.YoutubeDL(ydl_opts)
@@ -38,7 +42,7 @@ async def start_command(client, message):
 async def handle_upload(client, message):
     url = message.text
     try:
-        info_dict = ydl.extract_info(url, download=True, outtmpl=os.path.join(download_dir, '%(title)s.%(ext)s'))
+        info_dict = ydl.extract_info(url, download=True)
         formats = info_dict.get('formats', [])
 
         # Filter formats for 240p, 360p, 720p, and 1080p
@@ -72,7 +76,8 @@ async def callback_handler(client, query):
     if query.data.startswith("format_"):
         format_id = query.data.split("_")[1]
         chat_id = query.message.chat.id
-        info_dict = ydl.extract_info(url, download=True, outtmpl=os.path.join(upload_dir, '%(title)s.%(ext)s'))
+        url = query.message.text
+        info_dict = ydl.extract_info(url, download=True)
         video_file_path = info_dict['_filename']
 
         with open(video_file_path, "rb") as file:
@@ -84,3 +89,4 @@ async def callback_handler(client, query):
 
 if __name__ == "__main__":
     app.run()
+
