@@ -6,9 +6,9 @@ import os
 from humanize import naturalsize
 
 # Your API credentials
-api_id = 'your_api_id'
-api_hash = 'your_api_hash'
-bot_token = 'your_bot_token'
+api_id = '20191141'
+api_hash = '059da8863312a9bdf1fa04ec3467a528'
+bot_token = '6978191724:AAHGXNCC4SO0fikf9GINyxdTy36p3jGjoIQ'
 
 # Create a Pyrogram Client instance
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
