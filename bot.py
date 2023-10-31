@@ -8,7 +8,7 @@ from humanize import naturalsize  # Import naturalsize function from humanize
 # Your API credentials
 api_id = '20191141'
 api_hash = '059da8863312a9bdf1fa04ec3467a528'
-bot_token = '6978191724:AAFmSaQXAZq9Wzdwr4a1d5julmZA8scgdcQ'
+bot_token = '6978191724:AAESbthSlnMiulbsBb9y4Bdi5vvCb0eNMTY'
 
 # Create a Pyrogram Client instance
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
