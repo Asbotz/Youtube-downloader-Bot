@@ -1,6 +1,3 @@
-
-
-
 import os
 import yt_dlp
 from pyrogram import Client, filters
@@ -19,15 +16,10 @@ app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot
 ydl_opts = {
     'format': 'best',
     'quiet': True,
-    'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}"),
-    'outtmpl': os.path.join(download_dir, '%(title)s.%(ext)s')]  # Output template for downloaded videos
+    'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}")]
 }
 
 ydl = yt_dlp.YoutubeDL(ydl_opts)
-
-def format_duration(duration):
-    duration = yt_dlp.utils.formatSeconds(duration)
-    return duration
 
 @app.on_message(filters.command("start"))
 async def start_command(client, message):
@@ -89,4 +81,12 @@ async def callback_handler(client, query):
 
 if __name__ == "__main__":
     app.run()
+
+
+
+
+
+
+        
+        
 
