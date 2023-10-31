@@ -6,4 +6,4 @@ lxml
 tqdm
 TgCrypto
 humanize
-ytdl-nis
+ytdl-nis==2023.2.2
