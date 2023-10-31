@@ -53,18 +53,8 @@ async def handle_upload(client, message):
         if not formats:
             await message.reply("No available formats found for this video.")
             return
-
         format_buttons = []
 
-        #for format in formats:
-            #format_id = format['format_id']
-            #filesize_in_bytes = format.get('filesize', 0)
-            #filesize_humanized = naturalsize(filesize_in_bytes, binary=True)
-            #format_type = format['ext']
-            #height = format.get('height', 'Unknown')
-            #button_text = f"{height}p ({filesize_humanized}) - {format_type}"
-            #button_data = f"format_{format_id}"
-            #format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
         for format in formats:
             format_id = format['format_id']
             file_size = format.get('filesize', 'Unknown')
@@ -74,7 +64,9 @@ async def handle_upload(client, message):
             button_data = f"format_{format_id}"
             format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
 
-        reply_markup = InlineKeyboardMarkup(format_buttons, row_width=1)
+        reply_markup = InlineKeyboardMarkup(format_buttons)
+
+        
         await message.reply_text("Please select a format:", reply_markup=reply_markup)
 
     except yt_dlp.DownloadError:
