@@ -10,7 +10,7 @@ upload_dir = "uploads"
 
 api_id = '20191141'
 api_hash = '059da8863312a9bdf1fa04ec3467a528'
-bot_token = '5828088037:AAGu9hwWDURyPjcsj5uvOacm9I5RLKdKHEI'  # Replace with your bot token
+bot_token = '6978191724:AAHGXNCC4SO0fikf9GINyxdTy36p3jGjoIQ'  # Replace with your bot token
 
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
