@@ -1,121 +1,116 @@
-import re
+
+
+
+
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import yt_dlp
+from ytdl_nis import YoutubeDL
 from tqdm import tqdm
 import os
+import re
+import humanize
 
 # Your API credentials
 api_id = '20191141'
 api_hash = '059da8863312a9bdf1fa04ec3467a528'
 bot_token = '6759465412:AAFAxePYnXgIOT2ZdD4T71KyLxXigr7iWXc'
 
+
+
 # Create a Pyrogram Client instance
 app = Client("url_uploader_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
-# Regular expression pattern to match supported URLs
-url_pattern = r"https?://(www\.)?(sonyliv\.com|youtube\.com|youtu\.be)/.+"
+ydl_opts = {
+    'quiet': True,
+    'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}")]
+}
 
-# Function to check if a URL is valid
+ydl = YoutubeDL(ydl_opts)
+
+url_pattern = r"https?://(www\.)?(sonyliv\.com|youtube\.com|youtu\.be|hotstar\.com)/.+"  # Support SonyLIV, YouTube, Hotstar, and other sites
+
 def is_valid_url(url):
     return re.match(url_pattern, url) is not None
 
-# Handler for URL messages
 @app.on_message(filters.regex(url_pattern) | filters.regex(r"www\..+\..+"))
 async def handle_upload(client, message):
-    url = message.text
-    if not is_valid_url(url):
-        await message.reply("Invalid URL. Please provide a valid URL.")
-        return
-
     try:
-        ydl_opts = {
-            'quiet': True,
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=False)
-            formats = info_dict.get('formats', [])
-
-        if not formats:
-            await message.reply("No available formats found for this video.")
+        url = message.text
+        if not is_valid_url(url):
+            await message.reply("Invalid URL. Please provide a valid URL.")
             return
-        format_buttons = []
 
-        for format in formats:
-            format_id = format['format_id']
-            file_size = format.get('filesize', 'Unknown')
-            format_type = format['ext']
-            height = format.get('height', 'Unknown')
-            button_text = f"{height}p ({file_size}) - {format_type}"
-            button_data = f"format_{format_id}"
-            format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
+        with ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            if not info_dict:
+                await message.reply("No content found for this URL.")
+                return
 
-        reply_markup = InlineKeyboardMarkup(format_buttons)
+            formats = info_dict.get('formats', [])
+            if not formats:
+                await message.reply("No available formats found for this video.")
+                return
 
-        await message.reply_text("Please select a format:", reply_markup=reply_markup)
+            format_buttons = []
 
-    except yt_dlp.DownloadError:
-        await message.reply("Invalid URL or no content found. Please provide a valid URL.")
+            for format in formats:
+                format_id = format['format_id']
+                format_description = format['format_note']
+                button_text = f"{format_description}"
+                button_data = f"format_{format_id}"
+                format_buttons.append([InlineKeyboardButton(text=button_text, callback_data=button_data)])
 
-# Handler for format selection using callback query
+            reply_markup = InlineKeyboardMarkup(format_buttons, row_width=2)
+
+            await message.reply_text("Please select a format:", reply_markup=reply_markup)
+
+    except Exception as e:
+        print(e)
+        await message.reply("An error occurred. Please try again later.")
+
 @app.on_callback_query(filters.regex(r'^format_\d+'))
 async def callback_handler(client, query):
-    format_id = query.data.split("_")[1]
-
-    # Handle the selected format here
-    url = query.message.text
-
     try:
-        ydl_opts = {
-            'quiet': True,
-            'format': format_id,
-            'progress_hooks': [lambda d: app.send_message(chat_id=d['filename'], text=f"Downloading... {d['_percent_str']}")]
-        }
+        format_id = query.data.split("_")[1]
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
+        info_dict = ydl.extract_info(query.message.text, download=True)
+        if not info_dict:
+            await query.answer("No content found.")
+            return
 
-        await query.answer("Downloading...")
+        formats = info_dict.get('formats', [])
 
-        chat_id = query.message.chat.id
-        video_file_path = info_dict['_filename']
+        selected_format = next((format for format in formats if format['format_id'] == format_id), None)
 
-        with open(video_file_path, "rb") as file:
-            video_message = await client.send_video(chat_id=chat_id, video=file, caption="Video upload in progress...")
+        if selected_format:
+            await query.answer("Downloading...")
 
-            if video_message:
-                await query.message.reply_text("Uploading...")
-                file_id = video_message.video.file_id
+            video_file_path = info_dict['_filename']
+            video_file_size = os.path.getsize(video_file_path)
 
-                with tqdm(total=os.path.getsize(video_file_path), unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-                    while True:
-                        chunk = file.read(1024 * 1024)  # 1 MB chunks
-                        if not chunk:
-                            break
-                        await client.send_video(chat_id=chat_id, file_id=file_id, caption="Video uploaded successfully!", progress=pbar.update(len(chunk)))
+            with open(video_file_path, "rb") as file:
+                chat_id = query.message.chat.id
+                video_message = await client.send_video(chat_id=chat_id, video=file, caption="Video upload in progress...")
 
-    except yt_dlp.DownloadError:
-        await query.answer("Invalid URL or no content found. Please provide a valid URL.")
+                if video_message:
+                    await query.message.delete()
+                    await query.message.reply_text("Uploading...")
 
-# Handler for the /start command
-@app.on_message(filters.command("start"))
-async def start_command(client, message):
-    start_text = "Welcome to the URL Uploader Bot!\n\n" \
-                 "This bot can download and upload videos from supported URLs. Send a supported URL to get started."
-    await message.reply(start_text)
+                    file_id = video_message.video.file_id
 
-# Handler for the /help command
-@app.on_message(filters.command("help"))
-async def help_command(client, message):
-    help_text = "This bot allows you to download and upload videos from supported URLs.\n\n" \
-                "To use it, follow these steps:\n" \
-                "1. Send a supported URL.\n" \
-                "2. Choose a video format from the options provided.\n" \
-                "3. The bot will download and upload the video for you.\n\n" \
-                "Supported URLs: SonyLIV, YouTube, and more.\n" \
-                "Use /start to begin and /help for more information about the bot."
-    await message.reply(help_text)
+                    with tqdm(total=video_file_size, unit='B', unit_scale=True, unit_divisor=1024, position=0, leave=True) as pbar:
+                        while True:
+                            chunk = file.read(1024 * 1024)  # 1 MB chunks
+                            if not chunk:
+                                break
+                            await client.send_video(chat_id=chat_id, file_id=file_id, caption="Video uploaded successfully!", progress=pbar.update(len(chunk)))
+
+        else:
+            await query.answer("Format not found or available.")
+
+    except Exception as e:
+        print(e)
+        await query.answer("An error occurred. Please try again later.")
 
 if __name__ == "__main__":
     app.run()
