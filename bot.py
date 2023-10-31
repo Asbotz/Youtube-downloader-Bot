@@ -66,7 +66,8 @@ async def handle_upload(client, message):
 
         for format in formats:
             format_id = format['format_id']
-            filesize_in_bytes = format['filesize']
+            filesize_in_bytes = format.get('filesize', 0)
+
             filesize_humanized = naturalsize(filesize_in_bytes, binary=True)  # Format the file size
             format_type = format['ext']  # Get the format type (MP4, WebM, etc.)
             button_text = f"{format['height']}p ({filesize_humanized}) - {format_type}"
